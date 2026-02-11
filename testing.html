@@ -1,0 +1,1292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mobyl Partner Flow — Screen</title>
+
+  <style>
+    :root{
+      --bg0:#060a12;
+
+      --blue:#49b9ff;     /* Receiver A */
+      --amber:#ffb35a;    /* Receiver B */
+
+      --text:#eaf2ff;
+      --muted: rgba(234,242,255,.72);
+
+      --ring-size: 470px;
+      --ring-thickness: 2px;
+
+      --pulse-duration: 8s;
+    }
+
+    *{box-sizing:border-box}
+    body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  color:var(--text);
+  overflow:hidden;
+
+  /* Neon room vibe: red/pink side glows + blue mid glow + subtle vignette */
+  background:
+    radial-gradient(1200px 820px at 50% 40%, rgba(30,70,150,.55) 0%, rgba(6,10,18,.92) 58%, rgba(0,0,0,1) 100%),
+    radial-gradient(900px 520px at 6% 52%, rgba(255,40,110,.18), transparent 62%),
+    radial-gradient(900px 520px at 94% 52%, rgba(255,40,90,.16), transparent 62%),
+    radial-gradient(900px 520px at 50% 90%, rgba(73,185,255,.10), transparent 70%),
+    linear-gradient(180deg, #0a1530 0%, #04060b 70%);
+}
+
+    .bgPulse{
+  position:fixed; inset:0;
+  pointer-events:none;
+
+  /* Moving “room lights” */
+  background:
+    radial-gradient(900px 600px at 64% 38%, rgba(73,185,255,.18), transparent 60%),
+    radial-gradient(700px 520px at 34% 66%, rgba(255,179,90,.10), transparent 65%),
+
+    /* stronger neon sides */
+    radial-gradient(980px 420px at 7% 55%, rgba(255,40,110,.20), transparent 62%),
+    radial-gradient(980px 420px at 93% 55%, rgba(255,40,110,.18), transparent 62%),
+
+    /* subtle diagonal wash like a light beam */
+    linear-gradient(115deg, transparent 0%, rgba(255,40,110,.06) 42%, rgba(73,185,255,.06) 58%, transparent 100%);
+
+  opacity: .75;
+  mix-blend-mode: screen;
+  animation: roomLights 7.5s ease-in-out infinite;
+}
+
+@keyframes roomLights{
+  0%,100% { transform: scale(1) translateY(0); opacity:.60; }
+  50%     { transform: scale(1.03) translateY(-6px); opacity:.92; }
+}
+
+
+    .frame{
+      height:100vh;
+      display:grid;
+      grid-template-rows: auto 1fr auto;
+      padding:34px 44px 28px;
+      gap:18px;
+    }
+
+    .topBar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-size:14px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      font-weight:600; color:rgba(234,242,255,.9);
+      letter-spacing:.08em;
+    }
+    .brandDot{
+      width:10px; height:10px; border-radius:50%;
+      background: linear-gradient(180deg, rgba(73,185,255,.9), rgba(73,185,255,.2));
+      box-shadow:0 0 18px rgba(73,185,255,.45);
+    }
+
+    .stage{
+      display:grid;
+      grid-template-columns: 320px 1fr 320px;
+      align-items:center;
+      gap:26px;
+      height:100%;
+    }
+
+    .poseWrap{
+      height: 520px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      opacity:.98;
+      position:relative;
+    }
+
+    .ringWrap{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      height: 560px;
+    }
+
+    .ring{
+      width:var(--ring-size);
+      height:var(--ring-size);
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      --accent: var(--blue);
+    }
+
+    .ringSvg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      overflow:visible;
+      transform: rotate(-90deg);
+    }
+
+    .ringTrack{
+      stroke: rgba(255,255,255,.10);
+      stroke-width: var(--ring-thickness);
+      fill: none;
+    }
+
+    .ringProg{
+      stroke: var(--accent);
+      stroke-width: var(--ring-thickness);
+      fill: none;
+      stroke-linecap: butt;
+      filter: drop-shadow(0 0 18px rgba(0,0,0,.15));
+    }
+
+    .ringGlow{
+      stroke: var(--accent);
+      stroke-width: calc(var(--ring-thickness) + 6px);
+      opacity: .14;
+      fill: none;
+      stroke-linecap: butt;
+      filter: blur(2px);
+    }
+
+.ringFill {
+  stroke: var(--accent);
+  stroke-width: 1px;          /* Your thin 2px ring */
+  fill: none;
+  opacity: 0.35;              /* Subtle filled look */
+}
+
+    .time{
+      font-size:120px;
+      font-weight:700;
+      letter-spacing:.04em;
+      text-shadow: 0 0 30px rgba(0,0,0,.35);
+      transition: opacity .15s ease;
+      position:relative;
+      z-index:2;
+    }
+
+    .phase{
+      position:absolute;
+      bottom:-26px;
+      font-size:22px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color: rgba(234,242,255,.92);
+      text-align:center;
+      width: 110%;
+      left: -5%;
+      min-height: 28px;
+      z-index:2;
+    }
+
+/* --- Stretch title under ring (larger + long side lines) --- */
+.stretchTitle{
+  position:absolute;
+  bottom:-76px;
+  left:50%;
+  transform: translateX(-50%);
+  width: 180%;
+  text-align:center;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:22px;
+
+  font-size:22px;          /* larger for gym screens */
+  font-weight:700;
+  letter-spacing:.28em;
+  text-transform:uppercase;
+  color: rgba(234,242,255,.85);
+
+  text-shadow:
+    0 0 18px rgba(73,185,255,.18),
+    0 0 18px rgba(255,40,110,.08);
+
+  opacity:.95;
+  z-index:2;
+}
+
+/* LEFT line */
+.stretchTitle::before{
+  content:"";
+  flex:1;
+  max-width:520px;      /* 🔥 controls line length */
+  height:2px;
+  border-radius:2px;
+  background: linear-gradient(
+    90deg,
+    rgba(73,185,255,.15),
+    rgba(73,185,255,.85)
+  );
+  box-shadow: 0 0 16px rgba(73,185,255,.22);
+}
+
+/* RIGHT line */
+.stretchTitle::after{
+  content:"";
+  flex:1;
+  max-width:520px;      /* 🔥 controls line length */
+  height:2px;
+  border-radius:2px;
+  background: linear-gradient(
+    90deg,
+    rgba(73,185,255,.85),
+    rgba(73,185,255,.15)
+  );
+  box-shadow: 0 0 16px rgba(73,185,255,.22);
+}
+
+
+
+    .circleMsg{
+      position:absolute;
+      inset: 0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding: 0 60px;
+      font-weight:700;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      font-size: 34px;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity .25s ease, transform .25s ease;
+      pointer-events:none;
+      white-space: pre-line;
+      z-index:2;
+    }
+    .circleMsg.on{
+      opacity: 1;
+      transform: translateY(0px);
+    }
+
+    .breathWrap{
+      height:520px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+    }
+    .orb{
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.16), rgba(73,185,255,.10) 35%, rgba(73,185,255,.02) 70%);
+      border: 1px solid rgba(73,185,255,.20);
+      box-shadow: 0 0 60px rgba(73,185,255,.18);
+      animation: orbBreath 6s ease-in-out infinite;
+    }
+    @keyframes orbBreath{
+      0%,100%{ transform: scale(1); opacity:.85;}
+      50%{ transform: scale(1.10); opacity:1;}
+    }
+
+    .footer{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:18px;
+    }
+    .controls{
+      display:flex; gap:10px; flex-wrap:wrap;
+      max-width: 76vw;
+    }
+    button, select{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(10,16,28,.55);
+      color: rgba(234,242,255,.92);
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size:14px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      cursor:pointer;
+      backdrop-filter: blur(10px);
+    }
+    button:hover, select:hover{ border-color: rgba(255,255,255,.28); }
+    button.primary{
+      background: rgba(73,185,255,.14);
+      border-color: rgba(73,185,255,.28);
+    }
+    button.warn{
+      background: rgba(255,179,90,.14);
+      border-color: rgba(255,179,90,.28);
+    }
+    button:disabled{
+      opacity: .45;
+      cursor:not-allowed;
+    }
+    .status{
+      color: rgba(234,242,255,.70);
+      font-size:14px;
+      letter-spacing:.06em;
+      text-align:right;
+      min-width: 260px;
+    }
+
+    svg.pose{ width: 260px; height: 260px; }
+    .sil{ fill: rgba(73,185,255,.95); filter: drop-shadow(0 0 18px rgba(73,185,255,.30)); }
+
+    /* CLASS VIEW: hide UI but DO NOT change layout geometry */
+body.classView .topBar{ display:none; }
+body.classView .footer{ display:none; }
+
+/* keep your original padding so columns don't "reflow" visually */
+body.classView .frame{
+  grid-template-rows: 1fr;
+  padding:34px 44px 28px;
+}
+
+/* keep stage EXACT same grid + sizing */
+body.classView .stage{
+  height: calc(100vh - (34px + 28px));
+  align-items:center;
+}
+
+/* keep the left/right columns from expanding when top/footer disappear */
+body.classView .poseWrap,
+body.classView .breathWrap{
+  height: 520px;
+}
+body.classView .ringWrap{
+  height: 560px;
+}
+
+
+  </style>
+</head>
+
+<body>
+  <div class="bgPulse"></div>
+
+  <div class="frame">
+    <div class="topBar">
+      <div class="brand">
+        <span class="brandDot"></span>
+        <span id="flowNameTop">mobyl partner flow</span>
+      </div>
+      <div>6/10 intensity • communicate</div>
+    </div>
+
+    <div class="stage">
+      <div class="poseWrap">
+        <div id="poseSvgWrap"></div>
+      </div>
+
+      <div class="ringWrap">
+        <div class="ring" id="ring" style="--accent: var(--blue);">
+          <svg class="ringSvg" viewBox="0 0 100 100" aria-hidden="true">
+<circle id="ringFill" class="ringFill" cx="50" cy="50" r="48"></circle>
+            <circle id="ringGlow" class="ringGlow" cx="50" cy="50" r="44"></circle>
+            <circle class="ringTrack" cx="50" cy="50" r="44"></circle>
+            <circle id="ringProg" class="ringProg" cx="50" cy="50" r="44"></circle>
+          </svg>
+
+          <div class="time" id="time">--</div>
+          <div class="circleMsg" id="circleMsg"></div>
+          <div class="phase" id="phase"></div>
+<div class="stretchTitle" id="stretchTitle"></div>
+
+        </div>
+      </div>
+
+      <div class="breathWrap">
+        <div class="orb"></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="controls">
+        <select id="flowSelect" class="primary"></select>
+        <button id="levelBtn" class="primary">Beginner</button>
+        <button id="classViewBtn">Class View</button>
+        <button id="startFlowBtn" class="primary">Start Flow</button>
+
+        <button id="backBtn" class="warn" disabled>Back</button>
+        <button id="skipBtn" class="warn" disabled>Skip</button>
+
+        <button id="actionBtn" class="primary" disabled>Start Hold</button>
+
+        <button id="pauseBtn" class="warn">Pause</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+      <div class="status" id="status">Choose a flow • Start Flow • Instructor controls pacing</div>
+    </div>
+  </div>
+
+  <script>
+    /***********************
+     * AUDIO (minimal, safe)
+     ***********************/
+    const SOUNDS = {
+      start:    "audio/start.mp3",
+      find6:    "audio/find6.mp3",
+      contract: "audio/contract.mp3",
+      switch:   "audio/switch.mp3",
+      done:     "audio/done.mp3",
+    };
+
+    let audioEnabled = true;
+    const audioCache = {};
+
+    function playSound(key, volume = 1){
+      if(!audioEnabled) return;
+      const src = SOUNDS[key];
+      if(!src) return;
+
+      if(!audioCache[key]){
+        const a = new Audio(src);
+        a.preload = "auto";
+        audioCache[key] = a;
+      }
+
+      const sound = audioCache[key];
+      sound.volume = volume;
+      sound.currentTime = 0;
+      sound.play().catch(()=>{});
+    }
+
+    /***********************
+     * Stretch library
+     * ✅ names are clean: StretchName + side shown separately
+     ***********************/
+    const STRETCHES = {
+      hamstring_supine: {
+        name: "HAMSTRING",
+        setupCue: "Lie back.\nPartner lifts leg.",
+        poseSvg: "drawing.svg"
+      },
+      glute_figure4: {
+        name: "GLUTE (FIGURE 4)",
+        setupCue: "Cross ankle.\nGuide knee outward.",
+        poseSvg: poseBase("Figure 4")
+      },
+      hip_flexor_half_kneel: {
+        name: "HIP FLEXOR",
+        setupCue: "Half kneel.\nTuck hips.",
+        poseSvg: poseBase("Half Kneel")
+      },
+      chest_opener: {
+        name: "CHEST",
+        setupCue: "Open arm.\nGentle chest stretch.",
+        poseSvg: poseBase("Chest")
+      },
+      lats_overhead: {
+        name: "LATS",
+        setupCue: "Arms overhead.\nLean back.",
+        poseSvg: poseBase("Lats")
+      },
+      calf_supine: {
+        name: "CALF",
+        setupCue: "Leg straight.\nPull toes toward shin.",
+        poseSvg: poseBase("Calf")
+      },
+      quad_prone: {
+        name: "QUAD",
+        setupCue: "Lying face down.\nBend knee gently.",
+        poseSvg: poseBase("Quad")
+      },
+      chest_seated_opener: {
+        name: "CHEST (SEATED)",
+        setupCue: "Sit tall.\nArms back evenly.",
+        poseSvg: poseBase("Chest Seated")
+      },
+      back_forward_reach: {
+        name: "UPPER BACK",
+        setupCue: "Neutral spine.\nReach forward evenly.",
+        poseSvg: poseBase("Back Reach")
+      },
+      upper_trap_release: {
+        name: "UPPER TRAP",
+        setupCue: "Press shoulders down.\nShrug up 20%.",
+        poseSvg: poseBase("Traps")
+      }
+    };
+
+    /***********************
+     * Flows (blocks)
+     ***********************/
+    const FLOWS = {
+      lower_body_mvp: {
+        label: "Lower Body Flow (MVP)",
+        blocks: [
+          { stretchId: "hamstring_supine", sides: ["LEFT","RIGHT"] },
+          { stretchId: "glute_figure4", sides: ["LEFT","RIGHT"] },
+          { stretchId: "hip_flexor_half_kneel", sides: ["LEFT","RIGHT"] },
+        ]
+      },
+      upper_body_mvp: {
+        label: "Upper Body Reset (MVP)",
+        blocks: [
+          { stretchId: "chest_opener", sides: ["LEFT","RIGHT"] },
+          { stretchId: "lats_overhead", sides: ["BOTH"] }
+        ]
+      },
+      full_body_mvp: {
+        label: "Full Body Flow (MVP)",
+        blocks: [
+          { stretchId: "hamstring_supine", sides: ["LEFT","RIGHT"] },
+          { stretchId: "glute_figure4", sides: ["LEFT","RIGHT"] },
+          { stretchId: "hip_flexor_half_kneel", sides: ["LEFT","RIGHT"] },
+          { stretchId: "chest_opener", sides: ["LEFT","RIGHT"] },
+          { stretchId: "lats_overhead", sides: ["BOTH"] }
+        ]
+      },
+      full_body_45: {
+        label: "Full Body 45-Min Class",
+        blocks: [
+          { stretchId: "hamstring_supine", sides: ["LEFT","RIGHT"] },
+          { stretchId: "glute_figure4", sides: ["LEFT","RIGHT"] },
+          { stretchId: "calf_supine", sides: ["LEFT","RIGHT"] },
+          { stretchId: "quad_prone", sides: ["LEFT","RIGHT"] },
+          { stretchId: "chest_seated_opener", sides: ["BOTH"] },
+          { stretchId: "back_forward_reach", sides: ["BOTH"] },
+          { stretchId: "upper_trap_release", sides: ["BOTH"] }
+        ]
+      }
+    };
+
+    /***********************
+     * Timing config (ONE push only)
+     ***********************/
+    const DUR = { hold: 20, contract: 5, relax: 20 };
+
+    const LEVELS = {
+      beginner: { announce: 2, find6: 15 },
+      advanced: { announce: 2, find6: 12 }
+    };
+
+    const FIND_NEW6_SEC = 10;
+    const PREP_CONTRACT_REPLACE_LAST = 5;
+
+    /***********************
+     * DOM
+     ***********************/
+    const elTime  = document.getElementById("time");
+    const elPhase = document.getElementById("phase");
+    const elRing  = document.getElementById("ring");
+    const elStatus= document.getElementById("status");
+    const elPoseSvgWrap = document.getElementById("poseSvgWrap");
+    const elCircleMsg = document.getElementById("circleMsg");
+    const elFlowNameTop = document.getElementById("flowNameTop");
+const elStretchTitle = document.getElementById("stretchTitle");
+
+
+    const ringProg = document.getElementById("ringProg");
+    const ringGlow = document.getElementById("ringGlow");
+
+    const flowSelect = document.getElementById("flowSelect");
+    const levelBtn = document.getElementById("levelBtn");
+    const classViewBtn = document.getElementById("classViewBtn");
+    const startFlowBtn = document.getElementById("startFlowBtn");
+    const actionBtn = document.getElementById("actionBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const backBtn = document.getElementById("backBtn");
+    const skipBtn = document.getElementById("skipBtn");
+
+    /***********************
+     * SVG ring math
+     ***********************/
+    const R = 44;
+    const CIRC = 2 * Math.PI * R;
+    ringProg.style.strokeDasharray = `${CIRC}`;
+    ringGlow.style.strokeDasharray = `${CIRC}`;
+    ringProg.style.strokeDashoffset = `${CIRC}`;
+    ringGlow.style.strokeDashoffset = `${CIRC}`;
+
+    /***********************
+     * State
+     ***********************/
+    let timer = null;
+    let rafId = null;
+    let paused = false;
+
+    let phaseStartMs = 0;
+    let phaseTotalSec = 0;
+    let pausedAtMs = 0;
+    let pausedAccumMs = 0;
+
+    let currentPhases = null;
+    let phaseIndex = 0;
+
+    let level = "beginner";
+
+    let activeFlowKey = "full_body_45";
+    let flowBlocks = [];
+    let blockIndex = -1;
+    let sideIndex = 0;
+
+    let receiver = "A"; // A or B
+    let receiverRound = 0; // 0 first receiver, 1 second receiver
+    let gateState = "IDLE"; // IDLE | SETUP_WAIT | RUNNING | SWITCH_WAIT
+
+    // class view
+    let classView = false;
+
+    /***********************
+     * Helpers
+     ***********************/
+    function sideLabel(side){
+      const s = String(side || "").toUpperCase();
+      if(s === "LEFT") return "LEFT LEG";
+      if(s === "RIGHT") return "RIGHT LEG";
+      if(s === "BOTH") return "BOTH";
+      return s;
+    }
+
+    function receiverAccent(){
+      return (receiver === "A") ? "var(--blue)" : "var(--amber)";
+    }
+
+    function setAccent(colorVar){
+      elRing.style.setProperty("--accent", colorVar);
+    }
+
+    function setProgress(pct){
+      const clamped = Math.max(0, Math.min(1, pct));
+      const offset = CIRC * (1 - clamped);
+      ringProg.style.strokeDashoffset = `${offset}`;
+      ringGlow.style.strokeDashoffset = `${offset}`;
+    }
+
+    function showBig(text){
+      elCircleMsg.textContent = text;
+      elCircleMsg.classList.add("on");
+      elTime.style.opacity = "0";
+    }
+    function hideBig(){
+      elCircleMsg.classList.remove("on");
+      elTime.style.opacity = "1";
+    }
+
+    function showTimed(label, value){
+  elPhase.textContent = label || "";
+
+  // If it's a number (or numeric string), show 2-digit time.
+  const n = Number(value);
+  const isNumeric = value !== "" && value !== null && value !== undefined && Number.isFinite(n);
+
+  if(isNumeric){
+    elTime.textContent = String(Math.max(0, Math.ceil(n))).padStart(2, "0");
+  } else {
+    // Otherwise show the text as-is (no padding)
+    elTime.textContent = String(value ?? "");
+  }
+}
+
+    function stopTimer(){
+      if(timer) clearInterval(timer);
+      timer = null;
+      if(rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
+    function setPose(stretchId){
+      const s = STRETCHES[stretchId];
+      if(!s) return;
+
+      if(typeof s.poseSvg === "string" && s.poseSvg.endsWith(".svg")){
+        elPoseSvgWrap.innerHTML = `
+          <img src="${s.poseSvg}" alt="${s.name}"
+               style="width:460px;height:460px;display:block;" />
+        `;
+      } else {
+        elPoseSvgWrap.innerHTML = s.poseSvg;
+      }
+    }
+
+    function setFlowName(){
+      const flow = FLOWS[activeFlowKey];
+      elFlowNameTop.textContent = flow?.label || "mobyl partner flow";
+    }
+
+    function updateRecoveryButtons(){
+      const hasPhases = !!currentPhases;
+      backBtn.disabled = !(hasPhases && (phaseIndex > 0 || gateState === "RUNNING")) && gateState !== "SWITCH_WAIT";
+      skipBtn.disabled = !(hasPhases || gateState === "SWITCH_WAIT" || gateState === "SETUP_WAIT");
+    }
+
+function setStretchTitle(text){
+  if(!elStretchTitle) return;
+  elStretchTitle.textContent = text || "";
+}
+
+    /***********************
+     * Intro is now ALWAYS part of startFlow()
+     ***********************/
+    function introPhases(){
+      return [
+        { kind:"timed_big", label:"WELCOME TO\nMOBYL PARTNER FLOW", secs: 3, accent:"var(--blue)" },
+        { kind:"timed_big", label:"6/10 ONLY • NO PAIN", secs: 3, accent:"var(--blue)" },
+        { kind:"timed_big", label:"NO FORCING RANGE\nNO BOUNCING", secs: 3, accent:"var(--blue)" },
+        { kind:"timed_big", label:"COMMUNICATE CONSTANTLY\nSTOP IF SHARP", secs: 3, accent:"var(--blue)" },
+        { kind:"intro_done" }
+      ];
+    }
+
+    /***********************
+     * Phase builder (ONE push only)
+     ***********************/
+    function buildPhasesForSide(stretchId, side){
+      const s = STRETCHES[stretchId];
+      const pre = LEVELS[level];
+
+      const name = s?.name || stretchId;
+      const sideTxt = sideLabel(side);
+
+      const announceLines = [name, sideTxt].filter(Boolean).join("\n");
+      const setup = s?.setupCue || "Set position.";
+
+      const relaxFind = Math.min(FIND_NEW6_SEC, DUR.relax);
+      const relaxHold = Math.max(0, DUR.relax - relaxFind);
+
+      return [
+        { kind:"timed_big", label: announceLines, secs: pre.announce, accent: receiverAccent() },
+
+        { kind:"setup_gate", label: setup, accent: receiverAccent() },
+
+        { kind:"timed_big", label:"FIND YOUR 6/10", secs: pre.find6, accent: receiverAccent() },
+
+        { kind:"timed", label:"PASSIVE HOLD", secs: DUR.hold, accent: receiverAccent(),
+          replaceLastBig: PREP_CONTRACT_REPLACE_LAST, bigText:"PREPARE TO CONTRACT" },
+
+        { kind:"timed", label:"CONTRACT • 20%", secs: DUR.contract, accent: "var(--amber)" },
+
+        { kind:"timed_big", label:"FIND NEW 6/10", secs: relaxFind, accent: receiverAccent() },
+        ...(relaxHold > 0 ? [{ kind:"timed", label:"HOLD", secs: relaxHold, accent: receiverAccent() }] : []),
+
+        { kind:"done_side" }
+      ];
+    }
+
+    /***********************
+     * Phase runner
+     ***********************/
+    function runPhase(){
+      if(!currentPhases) return;
+
+      const phase = currentPhases[phaseIndex];
+      if(!phase){
+        stopTimer();
+        hideBig();
+elPhase.textContent = "";
+        setProgress(0);
+        elStatus.textContent = "Side complete";
+        updateRecoveryButtons();
+        return;
+      }
+
+      if(phase.kind === "intro_done"){
+        // after intro, begin the actual flow
+        stopTimer();
+        hideBig();
+        elStatus.textContent = "Starting flow…";
+        blockIndex = 0;
+        sideIndex = 0;
+        receiver = "A";
+        receiverRound = 0;
+        runCurrentSide();
+        return;
+      }
+
+      if(phase.kind === "setup_gate"){
+        gateState = "SETUP_WAIT";
+        stopTimer();
+        setAccent(phase.accent);
+        setProgress(0);
+
+        showBig(phase.label);
+        elPhase.textContent = "";
+
+        playSound("start", 0.8);
+
+        actionBtn.disabled = false;
+        actionBtn.textContent = "Start Hold";
+
+        elStatus.textContent = "Press START HOLD when ready";
+        updateRecoveryButtons();
+        return;
+      }
+
+      if(phase.kind === "done_side"){
+        setTimeout(()=> finishSideAndAdvance(), 50);
+        updateRecoveryButtons();
+        return;
+      }
+
+      gateState = "RUNNING";
+      actionBtn.disabled = true;
+
+      stopTimer();
+      pausedAccumMs = 0;
+      pausedAtMs = 0;
+
+      setAccent(phase.accent);
+
+      phaseTotalSec = phase.secs || 0;
+      phaseStartMs = performance.now();
+
+      if(phase.kind === "timed_big" && phase.label === "FIND YOUR 6/10"){
+        playSound("find6", 0.9);
+      }
+      if(phase.kind === "timed" && String(phase.label || "").includes("CONTRACT")){
+        playSound("contract", 1.0);
+      }
+
+      if(phase.kind === "timed_big"){
+        showBig(phase.label);
+        elPhase.textContent = "";
+      } else {
+        hideBig();
+        showTimed(phase.label, phaseTotalSec);
+      }
+
+      const animate = () => {
+        if(!currentPhases) return;
+
+        if((phase.kind === "timed" || phase.kind === "timed_big") && !paused){
+          const now = performance.now();
+          const elapsedMs = now - phaseStartMs - pausedAccumMs;
+          const elapsedSec = Math.min(phaseTotalSec, elapsedMs / 1000);
+          setProgress(phaseTotalSec ? (elapsedSec / phaseTotalSec) : 0);
+        }
+
+        rafId = requestAnimationFrame(animate);
+      };
+      rafId = requestAnimationFrame(animate);
+
+      timer = setInterval(()=>{
+        if(paused) return;
+
+        const now = performance.now();
+        const elapsedMs = now - phaseStartMs - pausedAccumMs;
+        const elapsedSec = elapsedMs / 1000;
+        const done = elapsedSec >= phaseTotalSec;
+
+        if(phase.kind === "timed_big"){
+          if(done){
+            stopTimer();
+            setTimeout(()=>{ phaseIndex += 1; runPhase(); }, 220);
+          }
+          updateRecoveryButtons();
+          return;
+        }
+
+        const newRemaining = Math.max(0, Math.ceil(phaseTotalSec - elapsedSec));
+
+        if(phase.replaceLastBig && newRemaining <= phase.replaceLastBig){
+          showBig(phase.bigText || "GET READY");
+          elPhase.textContent = "";
+        } else {
+          if(elCircleMsg.classList.contains("on")) hideBig();
+          showTimed(phase.label, newRemaining);
+        }
+
+        if(done){
+          stopTimer();
+          hideBig();
+          setTimeout(()=>{ phaseIndex += 1; runPhase(); }, 420);
+        }
+
+        updateRecoveryButtons();
+      }, 200);
+
+      updateRecoveryButtons();
+    }
+
+    /***********************
+     * Flow engine (blocks -> sides -> switch)
+     ***********************/
+    function loadFlow(flowKey){
+      activeFlowKey = flowKey;
+      const flow = FLOWS[flowKey];
+      flowBlocks = flow?.blocks ? [...flow.blocks] : [];
+
+      blockIndex = -1;
+      sideIndex = 0;
+      receiver = "A";
+      receiverRound = 0;
+      gateState = "IDLE";
+
+      setFlowName();
+
+      elStatus.textContent = "Flow loaded • Start Flow";
+      actionBtn.disabled = true;
+      actionBtn.textContent = "Start Hold";
+
+      stopTimer();
+      hideBig();
+elPhase.textContent = "";
+      setAccent(receiverAccent());
+      setProgress(0);
+
+      elPoseSvgWrap.innerHTML = "";
+
+      currentPhases = null;
+      phaseIndex = 0;
+
+      updateRecoveryButtons();
+    }
+
+    function startFlow(){
+      if(!flowBlocks.length){
+        elStatus.textContent = "No blocks in this flow";
+        return;
+setStretchTitle(FLOWS[activeFlowKey]?.label || "");
+
+      }
+
+      // ✅ intro always runs first (no button)
+      stopTimer();
+      paused = false;
+      pauseBtn.textContent = "Pause";
+      gateState = "RUNNING";
+      actionBtn.disabled = true;
+      actionBtn.textContent = "Start Hold";
+
+      setAccent("var(--blue)");
+      setProgress(0);
+      elPoseSvgWrap.innerHTML = "";
+
+      currentPhases = introPhases();
+      phaseIndex = 0;
+      elStatus.textContent = "Starting…";
+      runPhase();
+    }
+
+    function runCurrentSide(){
+      const block = flowBlocks[blockIndex];
+      if(!block){
+  gateState = "IDLE";
+  stopTimer();
+  setProgress(0);
+
+  // ✅ Put text INSIDE the circle
+  showBig("FLOW COMPLETE");
+  elPhase.textContent = "";      // remove READY/labels
+
+  elStatus.textContent = "Flow complete • Reset or choose new flow";
+
+  // clean state
+  currentPhases = null;
+  actionBtn.disabled = true;
+  updateRecoveryButtons();
+  return;
+}
+
+
+      setAccent(receiverAccent());
+
+      const side = block.sides[sideIndex];
+
+const s = STRETCHES[block.stretchId];
+const title = s ? `${s.name}${side === "BOTH" ? "" : " • " + sideLabel(side)}` : "";
+setStretchTitle(title);
+
+setPose(block.stretchId);
+
+currentPhases = buildPhasesForSide(block.stretchId, side);
+
+      phaseIndex = 0;
+      runPhase();
+    }
+
+    function finishSideAndAdvance(){
+      const block = flowBlocks[blockIndex];
+      if(!block) return;
+
+      sideIndex += 1;
+
+      if(sideIndex < block.sides.length){
+        runCurrentSide();
+        return;
+      }
+
+      if(receiverRound === 0){
+        receiverRound = 1;
+        showSwitchRolesScreen(true);
+        return;
+      }
+
+      receiverRound = 0;
+      showSwitchRolesScreen(false);
+    }
+
+    function showSwitchRolesScreen(repeatSameStretch){
+      gateState = "SWITCH_WAIT";
+      stopTimer();
+      setProgress(0);
+
+      setAccent(receiverAccent());
+
+      showBig("SWITCH ROLES");
+      elPhase.textContent = "";
+
+      playSound("switch", 1.0);
+
+      elStatus.textContent = repeatSameStretch
+        ? "Same stretch • Other partner now"
+        : "Next stretch";
+
+      actionBtn.disabled = false;
+      actionBtn.textContent = repeatSameStretch ? "Start Partner" : "Next Stretch";
+
+      actionBtn.dataset.repeatSame = repeatSameStretch ? "1" : "0";
+
+      currentPhases = null;
+      phaseIndex = 0;
+
+      updateRecoveryButtons();
+    }
+
+    function advanceToNextBlock(){
+      receiver = (receiver === "A") ? "B" : "A";
+
+      const repeatSame = actionBtn.dataset.repeatSame === "1";
+
+      if(repeatSame){
+        sideIndex = 0;
+        hideBig();
+        actionBtn.disabled = true;
+        actionBtn.textContent = "Start Hold";
+        runCurrentSide();
+        return;
+      }
+
+      blockIndex += 1;
+      sideIndex = 0;
+
+      hideBig();
+      actionBtn.disabled = true;
+      actionBtn.textContent = "Start Hold";
+
+      runCurrentSide();
+    }
+
+    /***********************
+     * Recovery controls: Back / Skip
+     ***********************/
+    function skipCurrent(){
+      if(gateState === "SETUP_WAIT" && currentPhases){
+        hideBig();
+        actionBtn.disabled = true;
+        actionBtn.textContent = "Start Hold";
+        phaseIndex += 1;
+        runPhase();
+        return;
+      }
+
+      if(currentPhases){
+        stopTimer();
+        hideBig();
+        phaseIndex = Math.min(currentPhases.length - 1, phaseIndex + 1);
+        runPhase();
+        return;
+      }
+
+      if(gateState === "SWITCH_WAIT"){
+        advanceToNextBlock();
+      }
+    }
+
+    function backOne(){
+      if(gateState === "SETUP_WAIT" && currentPhases){
+        stopTimer();
+        hideBig();
+        phaseIndex = Math.max(0, phaseIndex - 1);
+        runPhase();
+        return;
+      }
+
+      if(currentPhases){
+        stopTimer();
+        hideBig();
+        phaseIndex = Math.max(0, phaseIndex - 1);
+        runPhase();
+        return;
+      }
+    }
+
+    backBtn.addEventListener("click", backOne);
+    skipBtn.addEventListener("click", skipCurrent);
+
+    /***********************
+     * Action button
+     ***********************/
+    actionBtn.addEventListener("click", ()=>{
+      if(gateState === "SETUP_WAIT" && currentPhases){
+        hideBig();
+        actionBtn.disabled = true;
+        actionBtn.textContent = "Start Hold";
+        phaseIndex += 1;
+        runPhase();
+        return;
+      }
+      if(gateState === "SWITCH_WAIT"){
+        actionBtn.disabled = true;
+        actionBtn.textContent = "Start Hold";
+        advanceToNextBlock();
+      }
+    });
+
+    /***********************
+     * Pause / Resume
+     ***********************/
+    pauseBtn.addEventListener("click", ()=>{
+      if(!currentPhases) return;
+      if(gateState === "SETUP_WAIT") return;
+
+      const now = performance.now();
+      if(!paused){
+        paused = true;
+        pausedAtMs = now;
+        pauseBtn.textContent = "Resume";
+        elStatus.textContent = "Paused";
+      } else {
+        paused = false;
+        if(pausedAtMs){
+          pausedAccumMs += (now - pausedAtMs);
+          pausedAtMs = 0;
+        }
+        pauseBtn.textContent = "Pause";
+      }
+    });
+
+    /***********************
+     * Class View (hides ALL UI buttons)
+     * - Enter via button
+     * - Exit via ESC (or press V)
+     ***********************/
+    function setClassView(on){
+      classView = !!on;
+      document.body.classList.toggle("classView", classView);
+      if(classView){
+        elStatus.textContent = "Class View • Press ESC to exit";
+      }
+    }
+
+    classViewBtn.addEventListener("click", ()=> setClassView(true));
+
+    window.addEventListener("keydown", (e)=>{
+      if(e.key === "Escape" && classView) setClassView(false);
+      if((e.key === "v" || e.key === "V")) setClassView(!classView);
+      if(e.key === "ArrowRight") skipCurrent();
+      if(e.key === "ArrowLeft") backOne();
+      if(e.key === "p" || e.key === "P") pauseBtn.click();
+      if(e.key === "r" || e.key === "R") resetBtn.click();
+
+      // 🔥 SPACEBAR controls system
+  if(e.code === "Space"){
+    e.preventDefault();
+
+    // 1️⃣ If no flow running yet → start it
+    if(!currentPhases && gateState === "IDLE"){
+      startFlow();
+      return;
+    }
+
+    // 2️⃣ If waiting for setup confirmation
+    if(gateState === "SETUP_WAIT"){
+      actionBtn.click();
+      return;
+    }
+
+    // 3️⃣ If switching partners
+    if(gateState === "SWITCH_WAIT"){
+      actionBtn.click();
+      return;
+    }
+
+    // 4️⃣ If mid-phase → skip forward
+    if(currentPhases){
+      skipCurrent();
+    }
+  }    });
+
+    /***********************
+     * UI wiring
+     ***********************/
+    function populateFlowSelect(){
+      flowSelect.innerHTML = "";
+      Object.entries(FLOWS).forEach(([key, flow])=>{
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = flow.label;
+        flowSelect.appendChild(opt);
+      });
+    }
+
+    flowSelect.addEventListener("change", ()=> loadFlow(flowSelect.value));
+
+    levelBtn.addEventListener("click", ()=>{
+      level = (level === "beginner") ? "advanced" : "beginner";
+      levelBtn.textContent = (level === "beginner") ? "Beginner" : "Advanced";
+      elStatus.textContent = `Pacing set to ${level.toUpperCase()} • Find-6 timing updated`;
+    });
+
+    startFlowBtn.addEventListener("click", startFlow);
+
+   resetBtn.addEventListener("click", ()=>{
+  stopTimer();
+  paused = false;
+  pauseBtn.textContent = "Pause";
+
+  loadFlow(activeFlowKey);
+
+  // ✅ Reset UI state cleanly
+  setStretchTitle(FLOWS[activeFlowKey]?.label || "");
+  showBig("WELCOME");
+  elPhase.textContent = "";
+  setProgress(0);
+});
+
+
+    /***********************
+     * Boot
+     ***********************/
+    function boot(){
+      populateFlowSelect();
+      flowSelect.value = activeFlowKey;
+      levelBtn.textContent = "Beginner";
+      loadFlow(activeFlowKey);
+
+setStretchTitle(FLOWS[activeFlowKey]?.label || "");
+showBig("WELCOME");
+elPhase.textContent = "";
+setProgress(0);
+
+
+      Object.keys(SOUNDS).forEach(k => { try{ playSound(k, 0); }catch(e){} });
+    }
+    boot();
+
+    /***********************
+     * Pose placeholder SVG
+     ***********************/
+    function poseBase(label){
+      return `
+        <svg class="pose" viewBox="0 0 100 100" aria-label="${label}">
+          <path class="sil" d="M50 18a7 7 0 1 0 0 14a7 7 0 0 0 0-14zm-7 17c-6 2-11 10-13 19l-2 10c-.3 1.5.7 3 2.2 3.3c1.5.3 3-.7 3.3-2.2l2-10c1.1-5 3.6-10 6-11l3 10-7 23c-.5 1.6.4 3.3 2 3.8c1.6.5 3.3-.4 3.8-2l5-16 5 16c.5 1.6 2.2 2.5 3.8 2c1.6-.5 2.5-2.2 2-3.8l-7-23 3-10c2.4 1 4.9 6 6 11l2 10c.3 1.5 1.8 2.5 3.3 2.2c1.5-.3 2.5-1.8 2.2-3.3l-2-10c-2-9-7-17-13-19l-4 13h-8l-4-13z"/>
+        </svg>
+      `;
+    }
+  </script>
+</body>
+</html>
